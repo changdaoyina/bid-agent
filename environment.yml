@@ -1,0 +1,15 @@
+name: bid-agent
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.13.7
+  - pip
+  - pip:
+    - langchain>=1.2.0
+    - langgraph>=1.0.5
+    - langchain-openai>=1.1.6
+    - python-dotenv>=1.2.1
+    - python-docx>=1.1.0
+    - Pillow>=10.0.0
+    - pydantic>=2.0.0
