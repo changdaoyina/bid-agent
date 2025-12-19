@@ -21,7 +21,7 @@ def print_banner():
     """Print application banner."""
     print("\n" + "=" * 70)
     print("  BID-AGENT: Intelligent Document Image Insertion")
-    print("  Powered by LangChain + LangGraph + GLM")
+    print("  Powered by LangChain + LangGraph + Multi-LLM Support (GLM/Gemini)")
     print("=" * 70 + "\n")
 
 
@@ -54,9 +54,10 @@ def main() -> None:
     if not validate_environment():
         logger.error("\nPlease fix the configuration errors and try again.")
         logger.info("\nHint: Make sure you have:")
-        logger.info("  1. Created a .env file with your GLM_API_KEY")
-        logger.info("  2. Placed source document in 'from/' directory")
-        logger.info("  3. Placed target document in 'to/' directory")
+        logger.info("  1. Created a .env file with your API key (GLM_API_KEY or GEMINI_API_KEY)")
+        logger.info("  2. Set LLM_PROVIDER to 'glm' or 'gemini' in .env")
+        logger.info("  3. Placed source document in 'from/' directory")
+        logger.info("  4. Placed target document in 'to/' directory")
         sys.exit(1)
 
     # Run the agent
@@ -79,6 +80,9 @@ def main() -> None:
             sys.exit(1)
         elif result.get("completed"):
             print(f"\n✓ Status: SUCCESS")
+            print(f"  LLM Provider: {result.get('llm_provider', 'unknown').upper()}")
+            if result.get('used_multimodal'):
+                print(f"  Multimodal: Yes (analyzed images with AI vision)")
             print(f"  Images extracted: {len(result.get('extracted_images', []))}")
             print(f"  Images inserted: {len(result.get('insertion_plan', []))}")
             print(f"  Output document: {result.get('output_path')}")

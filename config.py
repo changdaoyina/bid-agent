@@ -12,8 +12,20 @@ PROJECT_ROOT = Path(__file__).parent.absolute()
 
 # GLM API Configuration (智谱AI)
 GLM_API_KEY = os.getenv("GLM_API_KEY", "")
-GLM_BASE_URL = os.getenv("GLM_BASE_URL", "https://open.bigmodel.cn/api/paas/v4/")
+GLM_BASE_URL = os.getenv("GLM_BASE_URL", "https://open.bigmodel.cn/api/coding/paas/v4/")
 GLM_MODEL = os.getenv("GLM_MODEL", "GLM-4.6")
+
+# Gemini API Configuration (Google)
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+
+# LLM Provider Selection
+# Options: "glm" (智谱AI), "gemini" (Google Gemini)
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "glm")
+
+# Enable multimodal features (image understanding)
+# Only works with providers that support multimodal (Gemini, GLM-4V)
+ENABLE_MULTIMODAL = os.getenv("ENABLE_MULTIMODAL", "false").lower() == "true"
 
 # Document Paths
 SOURCE_DOC_DIR = PROJECT_ROOT / "from"
@@ -50,9 +62,16 @@ def validate_config() -> tuple[bool, list[str]]:
     """
     errors = []
 
-    # Check GLM API key
-    if not GLM_API_KEY:
-        errors.append("GLM_API_KEY is not set in .env file")
+    # Check LLM provider is valid
+    if LLM_PROVIDER not in ["glm", "gemini"]:
+        errors.append(f"Invalid LLM_PROVIDER: {LLM_PROVIDER}. Must be 'glm' or 'gemini'")
+
+    # Check API key for selected provider
+    if LLM_PROVIDER == "glm" and not GLM_API_KEY:
+        errors.append("GLM_API_KEY is not set in .env file (required for LLM_PROVIDER=glm)")
+
+    if LLM_PROVIDER == "gemini" and not GEMINI_API_KEY:
+        errors.append("GEMINI_API_KEY is not set in .env file (required for LLM_PROVIDER=gemini)")
 
     # Check source document exists
     if not SOURCE_DOC_PATH.exists():
@@ -68,7 +87,7 @@ def validate_config() -> tuple[bool, list[str]]:
 
     # Check temp directory exists
     if not TEMP_DIR.exists():
-        errors.append(f"Temp directory not found: {TEMP_DIR}")
+        TEMP_DIR.mkdir(parents=True, exist_ok=True)
 
     return len(errors) == 0, errors
 
@@ -79,6 +98,11 @@ def get_config_summary() -> str:
     Returns:
         String summary of configuration
     """
+    provider_info = {
+        "glm": f"GLM (智谱AI) - Model: {GLM_MODEL}",
+        "gemini": f"Gemini (Google) - Model: {GEMINI_MODEL}"
+    }
+
     return f"""
 Bid-Agent Configuration:
 ========================
@@ -87,11 +111,17 @@ Source Document: {SOURCE_DOC_PATH}
 Target Document: {TARGET_DOC_PATH}
 Output Directory: {OUTPUT_DOC_DIR}
 Temp Directory: {TEMP_DIR}
-LLM Provider: GLM (智谱AI)
-GLM Model: {GLM_MODEL}
-GLM Base URL: {GLM_BASE_URL}
-API Key Set: {'Yes' if GLM_API_KEY else 'No'}
+
+LLM Configuration:
+------------------
+Provider: {LLM_PROVIDER.upper()}
+{provider_info.get(LLM_PROVIDER, "Unknown provider")}
+API Key Set: {'Yes' if (LLM_PROVIDER == 'glm' and GLM_API_KEY) or (LLM_PROVIDER == 'gemini' and GEMINI_API_KEY) else 'No'}
 Temperature: {LLM_TEMPERATURE}
+Multimodal Enabled: {ENABLE_MULTIMODAL}
+
+Image Processing:
+-----------------
 Max Image Width: {MAX_IMAGE_WIDTH_INCHES} inches
 Image Alignment: {IMAGE_ALIGNMENT}
 """

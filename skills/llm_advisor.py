@@ -2,14 +2,13 @@
 
 import json
 from typing import Any, Dict, List
+from pathlib import Path
 
-from langchain_openai import ChatOpenAI
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.output_parsers import JsonOutputParser
 from pydantic import BaseModel, Field
 
 import config
 from skills.base_skill import BaseSkill
+from llm_providers import create_llm_provider, BaseLLMProvider
 
 
 class InsertionDecision(BaseModel):
@@ -27,15 +26,15 @@ class InsertionPlan(BaseModel):
 class LLMAdvisorSkill(BaseSkill):
     """Uses LLM to analyze document structure and suggest image insertion positions."""
 
-    def __init__(self):
+    def __init__(self, provider: BaseLLMProvider = None):
         super().__init__("LLMAdvisor")
 
-        # Initialize GLM (uses OpenAI-compatible API)
-        self.llm = ChatOpenAI(
-            model=config.GLM_MODEL,
-            temperature=config.LLM_TEMPERATURE,
-            openai_api_key=config.GLM_API_KEY,
-            openai_api_base=config.GLM_BASE_URL
+        # Use provided provider or create one from config
+        self.llm = provider or create_llm_provider()
+
+        self.logger.info(
+            f"Initialized with {self.llm.provider_name} provider "
+            f"(model: {self.llm.model}, multimodal: {self.llm.supports_multimodal})"
         )
 
     def validate_input(self, state: Dict[str, Any]) -> bool:
@@ -116,6 +115,72 @@ Provide your insertion plan:"""
 
         return prompt
 
+    def build_multimodal_prompt(self, state: Dict[str, Any]) -> str:
+        """Build an enhanced prompt for multimodal LLMs with image understanding.
+
+        Args:
+            state: Agent state with target_structure and extracted_images
+
+        Returns:
+            Formatted prompt string for multimodal analysis
+        """
+        structure = state["target_structure"]
+        images = state["extracted_images"]
+
+        # Build paragraph list
+        para_descriptions = []
+        for para in structure["paragraphs"]:
+            prefix = f"Para {para['index']}"
+            if para["is_heading"]:
+                prefix += f" ({para['style']})"
+            else:
+                prefix += " (Normal)"
+
+            text_preview = para["text"][:60] if para["text"] else "[empty]"
+            para_descriptions.append(f"  - {prefix}: {text_preview}")
+
+        paragraphs_text = "\n".join(para_descriptions)
+
+        prompt = f"""You are a professional document formatting assistant with image understanding capabilities.
+
+I will show you {len(images)} images from a project contract that need to be inserted into a bidding document.
+
+Target Document Structure:
+Total Paragraphs: {structure['total_paragraphs']}
+Total Headings: {len(structure['headings'])}
+Empty Paragraphs: {len(structure['empty_paragraphs'])}
+
+Paragraph Details:
+{paragraphs_text}
+
+Task: Analyze the provided images AND the document structure to suggest the best insertion position for each image.
+
+You will see {len(images)} images below. Use your vision capabilities to:
+1. Understand what each image shows (contract pages, screenshots, diagrams, etc.)
+2. Identify the most relevant section in the document for each image
+3. Consider the logical flow and context
+
+Requirements:
+1. Match image content to relevant section headings when possible
+2. Utilize empty paragraphs (indices: {structure['empty_paragraphs']}) when appropriate
+3. Distribute images reasonably, 1-2 images per section
+4. Avoid inserting in the middle of important content
+5. Maintain the logical narrative flow
+
+Return a JSON array with this exact format:
+[
+  {{
+    "image_index": 0,
+    "insert_after_para": 6,
+    "reason": "This contract signature page fits well after the agreements section"
+  }},
+  ...
+]
+
+Analyze the images below and provide your insertion plan:"""
+
+        return prompt
+
     def parse_llm_response(self, response: str) -> List[Dict[str, Any]]:
         """Parse LLM response into insertion plan.
 
@@ -167,18 +232,45 @@ Provide your insertion plan:"""
         """
         self.logger.info("Querying LLM for insertion advice")
 
-        # Build prompt
-        prompt = self.build_prompt(state)
-        self.logger.debug(f"Prompt:\n{prompt}")
+        # Check if we should use multimodal features
+        use_multimodal = (
+            config.ENABLE_MULTIMODAL and
+            self.llm.supports_multimodal
+        )
 
-        # Query LLM
-        try:
+        if use_multimodal:
+            self.logger.info("Using multimodal analysis with image understanding")
+            prompt = self.build_multimodal_prompt(state)
+
+            # Get image paths
+            image_paths = [
+                img["temp_path"]
+                for img in state["extracted_images"]
+                if Path(img["temp_path"]).exists()
+            ]
+
+            self.logger.info(f"Sending {len(image_paths)} images to LLM")
+
+            try:
+                response = self.llm.invoke_with_images(prompt, image_paths)
+                response_text = response.content
+            except Exception as e:
+                self.logger.warning(
+                    f"Multimodal invocation failed: {e}. Falling back to text-only."
+                )
+                use_multimodal = False
+
+        if not use_multimodal:
+            self.logger.info("Using text-only analysis")
+            prompt = self.build_prompt(state)
             response = self.llm.invoke(prompt)
             response_text = response.content
 
-            self.logger.debug(f"LLM Response:\n{response_text}")
+        self.logger.debug(f"Prompt:\n{prompt}")
+        self.logger.debug(f"LLM Response:\n{response_text}")
 
-            # Parse response
+        # Parse response
+        try:
             insertion_plan = self.parse_llm_response(response_text)
 
             # Validate plan
@@ -192,8 +284,12 @@ Provide your insertion plan:"""
             # Update state
             state["insertion_plan"] = insertion_plan
             state["current_step"] = "insertion_planned"
+            state["used_multimodal"] = use_multimodal
 
-            self.logger.info(f"Generated insertion plan for {len(insertion_plan)} images")
+            self.logger.info(
+                f"Generated insertion plan for {len(insertion_plan)} images "
+                f"(multimodal: {use_multimodal})"
+            )
 
             # Log the plan
             for decision in insertion_plan:

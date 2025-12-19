@@ -2,6 +2,7 @@
 
 from typing import TypedDict, Annotated, List, Any, Optional
 from langgraph.graph.message import add_messages
+import config
 
 
 class BidAgentState(TypedDict):
@@ -35,6 +36,10 @@ class BidAgentState(TypedDict):
     output_path: Optional[str]  # Path to the final output document
     backup_path: Optional[str]  # Path to the backup of original target
 
+    # LLM provider info
+    llm_provider: Optional[str]  # Which LLM provider was used
+    used_multimodal: bool  # Whether multimodal analysis was used
+
 
 def create_initial_state(source_path: str, target_path: str) -> BidAgentState:
     """Create an initial state for the agent.
@@ -57,7 +62,9 @@ def create_initial_state(source_path: str, target_path: str) -> BidAgentState:
         error=None,
         completed=False,
         output_path=None,
-        backup_path=None
+        backup_path=None,
+        llm_provider=config.LLM_PROVIDER,
+        used_multimodal=False
     )
 
 
