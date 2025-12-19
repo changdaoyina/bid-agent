@@ -27,6 +27,11 @@ LLM_PROVIDER = os.getenv("LLM_PROVIDER", "glm")
 # Only works with providers that support multimodal (Gemini, GLM-4V)
 ENABLE_MULTIMODAL = os.getenv("ENABLE_MULTIMODAL", "false").lower() == "true"
 
+# Multimodal Configuration
+MAX_IMAGES_PER_REQUEST = int(os.getenv("MAX_IMAGES_PER_REQUEST", "5"))  # Limit images to avoid timeout
+MAX_IMAGE_SIZE = int(os.getenv("MAX_IMAGE_SIZE", "1024"))  # Max dimension in pixels
+REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", "300"))  # Request timeout in seconds
+
 # Document Paths
 SOURCE_DOC_DIR = PROJECT_ROOT / "from"
 TARGET_DOC_DIR = PROJECT_ROOT / "to"

@@ -232,6 +232,9 @@ Analyze the images below and provide your insertion plan:"""
         """
         self.logger.info("查询 LLM 获取插入建议")
 
+        # Initialize
+        insertion_plan = []
+        
         # Check if we should use multimodal features
         use_multimodal = (
             config.ENABLE_MULTIMODAL and
@@ -240,40 +243,87 @@ Analyze the images below and provide your insertion plan:"""
 
         if use_multimodal:
             self.logger.info("使用多模态分析，包含图片理解")
-            prompt = self.build_multimodal_prompt(state)
 
-            # Get image paths
-            image_paths = [
+            # Get all image paths
+            all_image_paths = [
                 img["temp_path"]
                 for img in state["extracted_images"]
                 if Path(img["temp_path"]).exists()
             ]
-
-            self.logger.info(f"向 LLM 发送 {len(image_paths)} 张图片")
+            
+            total_images = len(all_image_paths)
+            max_per_batch = config.MAX_IMAGES_PER_REQUEST
+            
+            # Process in batches
+            batch_count = (total_images + max_per_batch - 1) // max_per_batch
+            
+            self.logger.info(
+                f"总共 {total_images} 张图片，将分 {batch_count} 批处理 "
+                f"(每批最多 {max_per_batch} 张)"
+            )
 
             try:
-                response = self.llm.invoke_with_images(prompt, image_paths)
-                response_text = response.content
+                for batch_idx in range(batch_count):
+                    batch_start = batch_idx * max_per_batch
+                    batch_end = min(batch_start + max_per_batch, total_images)
+                    batch_paths = all_image_paths[batch_start:batch_end]
+                    
+                    self.logger.info(
+                        f"处理第 {batch_idx + 1}/{batch_count} 批: "
+                        f"图片 {batch_start} 至 {batch_end - 1} ({len(batch_paths)} 张)"
+                    )
+                    
+                    # Build prompt for this batch
+                    prompt = self.build_multimodal_prompt(
+                        state, 
+                        batch_start=batch_start,
+                        batch_size=len(batch_paths)
+                    )
+                    
+                    # Call LLM with this batch
+                    response = self.llm.invoke_with_images(
+                        prompt,
+                        batch_paths,
+                        max_images_per_request=max_per_batch
+                    )
+                    
+                    # Parse this batch's decisions
+                    batch_decisions = self.parse_llm_response(response.content)
+                    insertion_plan.extend(batch_decisions)
+                    
+                    self.logger.info(
+                        f"第 {batch_idx + 1} 批分析完成，获得 {len(batch_decisions)} 个插入建议"
+                    )
+                
             except Exception as e:
                 self.logger.warning(
                     f"多模态调用失败: {e}。回退到纯文本模式。"
                 )
                 use_multimodal = False
+                insertion_plan = []  # Reset for text mode
 
         if not use_multimodal:
             self.logger.info("使用纯文本分析")
-            prompt = self.build_prompt(state)
-            response = self.llm.invoke(prompt)
-            response_text = response.content
+            try:
+                prompt = self.build_prompt(state)
+                response = self.llm.invoke(prompt)
+                response_text = response.content
+                
+                self.logger.debug(f"Prompt:\n{prompt}")
+                self.logger.debug(f"LLM Response:\n{response_text}")
+                
+                # Parse response for text mode
+                insertion_plan = self.parse_llm_response(response_text)
+            except Exception as e:
+                self.logger.error(f"纯文本模式调用失败: {e}")
+                raise
 
-        self.logger.debug(f"Prompt:\n{prompt}")
-        self.logger.debug(f"LLM Response:\n{response_text}")
-
-        # Parse response
+        # Validate plan
+        if not insertion_plan:
+            self.logger.error("插入计划为空，LLM 分析可能失败")
+            raise ValueError("Failed to generate insertion plan from LLM")
+        
         try:
-            insertion_plan = self.parse_llm_response(response_text)
-
-            # Validate plan
             num_images = len(state["extracted_images"])
             if len(insertion_plan) != num_images:
                 self.logger.warning(
@@ -302,7 +352,7 @@ Analyze the images below and provide your insertion plan:"""
             return state
 
         except Exception as e:
-            self.logger.error(f"LLM 查询失败: {e}")
+            self.logger.error(f"更新状态失败: {e}")
             raise
 
 

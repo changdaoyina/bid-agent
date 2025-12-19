@@ -51,7 +51,9 @@ class LLMProviderFactory:
             return GeminiProvider(
                 api_key=config.GEMINI_API_KEY,
                 model=config.GEMINI_MODEL,
-                temperature=config.LLM_TEMPERATURE
+                temperature=config.LLM_TEMPERATURE,
+                timeout=config.REQUEST_TIMEOUT,
+                max_image_size=config.MAX_IMAGE_SIZE
             )
 
         else:
