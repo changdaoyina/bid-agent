@@ -115,17 +115,24 @@ Provide your insertion plan:"""
 
         return prompt
 
-    def build_multimodal_prompt(self, state: Dict[str, Any]) -> str:
+    def build_multimodal_prompt(self, state: Dict[str, Any], batch_start: int = 0, batch_size: int = None) -> str:
         """Build an enhanced prompt for multimodal LLMs with image understanding.
 
         Args:
             state: Agent state with target_structure and extracted_images
+            batch_start: Starting index of the current batch
+            batch_size: Number of images in the current batch
 
         Returns:
             Formatted prompt string for multimodal analysis
         """
         structure = state["target_structure"]
         images = state["extracted_images"]
+        
+        # Use batch_size if provided, otherwise use all images
+        if batch_size is None:
+            batch_size = len(images)
+        batch_end = batch_start + batch_size
 
         # Build paragraph list
         para_descriptions = []
@@ -143,7 +150,7 @@ Provide your insertion plan:"""
 
         prompt = f"""You are a professional document formatting assistant with image understanding capabilities.
 
-I will show you {len(images)} images from a project contract that need to be inserted into a bidding document.
+I will show you {batch_size} images (from index {batch_start} to {batch_end - 1}) from a project contract that need to be inserted into a bidding document.
 
 Target Document Structure:
 Total Paragraphs: {structure['total_paragraphs']}
@@ -155,7 +162,7 @@ Paragraph Details:
 
 Task: Analyze the provided images AND the document structure to suggest the best insertion position for each image.
 
-You will see {len(images)} images below. Use your vision capabilities to:
+You will see {batch_size} images below (batch {batch_start // batch_size + 1}). Use your vision capabilities to:
 1. Understand what each image shows (contract pages, screenshots, diagrams, etc.)
 2. Identify the most relevant section in the document for each image
 3. Consider the logical flow and context
@@ -167,10 +174,10 @@ Requirements:
 4. Avoid inserting in the middle of important content
 5. Maintain the logical narrative flow
 
-Return a JSON array with this exact format:
+Return a JSON array with this exact format (use actual image indices starting from {batch_start}):
 [
   {{
-    "image_index": 0,
+    "image_index": {batch_start},
     "insert_after_para": 6,
     "reason": "This contract signature page fits well after the agreements section"
   }},

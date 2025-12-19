@@ -41,7 +41,8 @@ class LLMProviderFactory:
                 api_key=config.GLM_API_KEY,
                 base_url=config.GLM_BASE_URL,
                 model=config.GLM_MODEL,
-                temperature=config.LLM_TEMPERATURE
+                temperature=config.LLM_TEMPERATURE,
+                rate_limit_delay=config.LLM_RATE_LIMIT_DELAY
             )
 
         elif provider == "gemini":
@@ -53,7 +54,8 @@ class LLMProviderFactory:
                 model=config.GEMINI_MODEL,
                 temperature=config.LLM_TEMPERATURE,
                 timeout=config.REQUEST_TIMEOUT,
-                max_image_size=config.MAX_IMAGE_SIZE
+                max_image_size=config.MAX_IMAGE_SIZE,
+                rate_limit_delay=config.LLM_RATE_LIMIT_DELAY
             )
 
         else:

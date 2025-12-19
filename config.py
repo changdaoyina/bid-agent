@@ -17,7 +17,7 @@ GLM_MODEL = os.getenv("GLM_MODEL", "GLM-4.6")
 
 # Gemini API Configuration (Google)
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
 
 # LLM Provider Selection
 # Options: "glm" (智谱AI), "gemini" (Google Gemini)
@@ -28,7 +28,7 @@ LLM_PROVIDER = os.getenv("LLM_PROVIDER", "glm")
 ENABLE_MULTIMODAL = os.getenv("ENABLE_MULTIMODAL", "false").lower() == "true"
 
 # Multimodal Configuration
-MAX_IMAGES_PER_REQUEST = int(os.getenv("MAX_IMAGES_PER_REQUEST", "5"))  # Limit images to avoid timeout
+MAX_IMAGES_PER_REQUEST = int(os.getenv("MAX_IMAGES_PER_REQUEST", "1"))  # Limit images to avoid timeout
 MAX_IMAGE_SIZE = int(os.getenv("MAX_IMAGE_SIZE", "1024"))  # Max dimension in pixels
 REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", "300"))  # Request timeout in seconds
 
@@ -53,6 +53,7 @@ IMAGE_ALIGNMENT = "center"     # Image alignment: left, center, right
 # LLM Configuration
 LLM_TEMPERATURE = float(os.getenv("TEMPERATURE", "0"))  # Use 0 for deterministic output
 LLM_MAX_RETRIES = 3  # Maximum retries for LLM calls
+LLM_RATE_LIMIT_DELAY = float(os.getenv("LLM_RATE_LIMIT_DELAY", "1.0"))  # Delay in seconds after each LLM call
 
 # Logging Configuration
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")

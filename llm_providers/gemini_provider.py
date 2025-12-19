@@ -22,7 +22,8 @@ class GeminiProvider(BaseLLMProvider):
         model: str = "gemini-2.0-flash-exp",
         temperature: float = 0.0,
         timeout: int = 300,  # 5 minutes timeout
-        max_image_size: int = 1024  # Max image dimension
+        max_image_size: int = 1024,  # Max image dimension
+        rate_limit_delay: float = 1.0
     ):
         """Initialize Gemini provider.
 
@@ -32,8 +33,9 @@ class GeminiProvider(BaseLLMProvider):
             temperature: Sampling temperature
             timeout: Request timeout in seconds
             max_image_size: Maximum image dimension (width/height) in pixels
+            rate_limit_delay: Delay in seconds after each LLM call
         """
-        super().__init__(model, temperature)
+        super().__init__(model, temperature, rate_limit_delay)
 
         # Initialize Gemini client
         self.client = genai.Client(api_key=api_key)
@@ -90,7 +92,7 @@ class GeminiProvider(BaseLLMProvider):
             logger.warning(f"图片压缩失败: {e}，使用原图")
             return image_data
 
-    def invoke(self, prompt: str) -> LLMResponse:
+    def _invoke_impl(self, prompt: str) -> LLMResponse:
         """Send a text prompt to Gemini.
 
         Args:
@@ -100,6 +102,13 @@ class GeminiProvider(BaseLLMProvider):
             LLMResponse object
         """
         logger.debug(f"Invoking Gemini with prompt length: {len(prompt)}")
+
+        # 打印提示词
+        print("\n" + "="*80)
+        print("【发送给 Gemini 的提示词】")
+        print("="*80)
+        print(prompt)
+        print("="*80 + "\n")
 
         config = GenerateContentConfig(
             temperature=self.temperature,
@@ -112,6 +121,13 @@ class GeminiProvider(BaseLLMProvider):
             config=config
         )
 
+        # 打印返回结果
+        print("\n" + "="*80)
+        print("【Gemini 返回的结果】")
+        print("="*80)
+        print(response.text)
+        print("="*80 + "\n")
+
         return LLMResponse(
             content=response.text,
             raw_response=response,
@@ -119,7 +135,7 @@ class GeminiProvider(BaseLLMProvider):
             provider=self.provider_name
         )
 
-    def invoke_with_images(
+    def _invoke_with_images_impl(
         self,
         prompt: str,
         image_paths: List[str],
@@ -196,6 +212,16 @@ class GeminiProvider(BaseLLMProvider):
 
         logger.info(f"总共上传 {len([p for p in parts if isinstance(p, Part)])} 张图片，总大小: {total_size / 1024 / 1024:.2f} MB")
 
+        # 打印多模态提示词
+        print("\n" + "="*80)
+        print("【发送给 Gemini 的多模态提示词】")
+        print("="*80)
+        print(f"文本内容: {prompt}")
+        print(f"\n附带图片: {len([p for p in parts if isinstance(p, Part)])} 张")
+        for idx, img_path in enumerate(image_paths[:len([p for p in parts if isinstance(p, Part)])]):
+            print(f"  - 图片 {idx}: {Path(img_path).name}")
+        print("="*80 + "\n")
+
         # Generate response with config
         config = GenerateContentConfig(
             temperature=self.temperature,
@@ -208,6 +234,13 @@ class GeminiProvider(BaseLLMProvider):
                 contents=parts,
                 config=config
             )
+
+            # 打印返回结果
+            print("\n" + "="*80)
+            print("【Gemini 多模态返回的结果】")
+            print("="*80)
+            print(response.text)
+            print("="*80 + "\n")
 
             return LLMResponse(
                 content=response.text,
