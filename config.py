@@ -17,7 +17,7 @@ GLM_MODEL = os.getenv("GLM_MODEL", "GLM-4.6")
 
 # Gemini API Configuration (Google)
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "models/gemini-2.5-flash")  # 使用最新的 2.5 flash
 
 # LLM Provider Selection
 # Options: "glm" (智谱AI), "gemini" (Google Gemini)

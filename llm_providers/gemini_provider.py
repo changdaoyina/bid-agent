@@ -19,7 +19,7 @@ class GeminiProvider(BaseLLMProvider):
     def __init__(
         self,
         api_key: str,
-        model: str = "gemini-2.0-flash-exp",
+        model: str = "models/gemini-2.5-flash",  # 使用最新的 2.5 flash（需要 models/ 前缀）
         temperature: float = 0.0,
         timeout: int = 300,  # 5 minutes timeout
         max_image_size: int = 1024,  # Max image dimension
