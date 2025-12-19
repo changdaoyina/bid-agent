@@ -16,12 +16,12 @@ class DocxAnalyzerSkill(BaseSkill):
     def validate_input(self, state: Dict[str, Any]) -> bool:
         """Validate that target_path is provided."""
         if "target_path" not in state:
-            self.logger.error("target_path not found in state")
+            self.logger.error("状态中未找到 target_path")
             return False
 
         target_path = Path(state["target_path"])
         if not target_path.exists():
-            self.logger.error(f"Target document does not exist: {target_path}")
+            self.logger.error(f"目标文档不存在: {target_path}")
             return False
 
         return True
@@ -37,7 +37,7 @@ class DocxAnalyzerSkill(BaseSkill):
         """
         target_path = Path(state["target_path"])
 
-        self.logger.info(f"Analyzing document structure: {target_path}")
+        self.logger.info(f"分析文档结构: {target_path}")
 
         # Analyze document
         structure = analyze_document_structure(target_path)
@@ -73,8 +73,8 @@ class DocxAnalyzerSkill(BaseSkill):
         state["current_step"] = "target_analyzed"
 
         self.logger.info(
-            f"Analyzed document: {structure.total_paragraphs} paragraphs, "
-            f"{len(structure.headings)} headings"
+            f"已分析文档: {structure.total_paragraphs} 个段落, "
+            f"{len(structure.headings)} 个标题"
         )
 
         return state

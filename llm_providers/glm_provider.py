@@ -36,7 +36,7 @@ class GLMProvider(BaseLLMProvider):
             openai_api_base=base_url
         )
 
-        logger.info(f"Initialized GLM provider with model {model}")
+        logger.info(f"已初始化 GLM 提供商，使用模型 {model}")
 
     def invoke(self, prompt: str) -> LLMResponse:
         """Send a text prompt to GLM.
@@ -76,7 +76,7 @@ class GLMProvider(BaseLLMProvider):
             LLMResponse object
         """
         logger.warning(
-            f"GLM multimodal not implemented, using text-only for {len(image_paths)} images"
+            f"GLM 多模态未实现，对 {len(image_paths)} 张图片使用纯文本模式"
         )
         return self.invoke(prompt)
 

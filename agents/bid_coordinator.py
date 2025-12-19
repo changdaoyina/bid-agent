@@ -31,7 +31,7 @@ def extract_images_node(state: BidAgentState) -> BidAgentState:
         Updated state with extracted_images
     """
     logger.info("=" * 60)
-    logger.info("NODE 1: Extracting images from source document")
+    logger.info("节点 1: 从源文档提取图片")
     logger.info("=" * 60)
 
     return extractor_skill.run(state)
@@ -47,7 +47,7 @@ def analyze_target_node(state: BidAgentState) -> BidAgentState:
         Updated state with target_structure
     """
     logger.info("=" * 60)
-    logger.info("NODE 2: Analyzing target document structure")
+    logger.info("节点 2: 分析目标文档结构")
     logger.info("=" * 60)
 
     return analyzer_skill.run(state)
@@ -63,7 +63,7 @@ def llm_decision_node(state: BidAgentState) -> BidAgentState:
         Updated state with insertion_plan
     """
     logger.info("=" * 60)
-    logger.info("NODE 3: Using LLM to decide insertion positions")
+    logger.info("节点 3: 使用 LLM 决定插入位置")
     logger.info("=" * 60)
 
     return advisor_skill.run(state)
@@ -79,7 +79,7 @@ def insert_images_node(state: BidAgentState) -> BidAgentState:
         Updated state with completed=True
     """
     logger.info("=" * 60)
-    logger.info("NODE 4: Inserting images into target document")
+    logger.info("节点 4: 向目标文档插入图片")
     logger.info("=" * 60)
 
     return inserter_skill.run(state)
@@ -95,19 +95,19 @@ def verify_result_node(state: BidAgentState) -> BidAgentState:
         Final state
     """
     logger.info("=" * 60)
-    logger.info("NODE 5: Verifying results")
+    logger.info("节点 5: 验证结果")
     logger.info("=" * 60)
 
     if state.get("error"):
-        logger.error(f"Workflow failed: {state['error']}")
+        logger.error(f"工作流失败: {state['error']}")
     elif state.get("completed"):
-        logger.info("✓ Workflow completed successfully!")
-        logger.info(f"  Output: {state.get('output_path')}")
+        logger.info("✓ 工作流成功完成！")
+        logger.info(f"  输出: {state.get('output_path')}")
         if state.get('backup_path'):
-            logger.info(f"  Backup: {state.get('backup_path')}")
-        logger.info(f"  Images inserted: {len(state.get('insertion_plan', []))}")
+            logger.info(f"  备份: {state.get('backup_path')}")
+        logger.info(f"  已插入图片: {len(state.get('insertion_plan', []))} 张")
     else:
-        logger.warning("Workflow ended but not marked as completed")
+        logger.warning("工作流结束但未标记为已完成")
 
     return state
 
@@ -118,7 +118,7 @@ def create_bid_agent() -> StateGraph:
     Returns:
         Compiled StateGraph application
     """
-    logger.info("Creating bid agent workflow")
+    logger.info("创建招投标代理工作流")
 
     # Create workflow
     workflow = StateGraph(BidAgentState)
@@ -141,7 +141,7 @@ def create_bid_agent() -> StateGraph:
     # Compile workflow
     app = workflow.compile()
 
-    logger.info("Bid agent workflow created successfully")
+    logger.info("招投标代理工作流创建成功")
 
     return app
 
@@ -165,13 +165,13 @@ def run_bid_agent(source_path: str, target_path: str) -> Dict[str, Any]:
     agent = create_bid_agent()
 
     # Run workflow
-    logger.info("Starting bid agent workflow")
-    logger.info(f"Source: {source_path}")
-    logger.info(f"Target: {target_path}")
+    logger.info("启动招投标代理工作流")
+    logger.info(f"源文档: {source_path}")
+    logger.info(f"目标文档: {target_path}")
 
     final_state = agent.invoke(initial_state)
 
-    logger.info("Workflow execution completed")
+    logger.info("工作流执行完成")
 
     return final_state
 

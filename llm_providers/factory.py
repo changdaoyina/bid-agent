@@ -31,7 +31,7 @@ class LLMProviderFactory:
         provider = provider_name or config.LLM_PROVIDER
         provider = provider.lower()
 
-        logger.info(f"Creating LLM provider: {provider}")
+        logger.info(f"创建 LLM 提供商: {provider}")
 
         if provider == "glm":
             if not config.GLM_API_KEY:

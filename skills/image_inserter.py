@@ -20,16 +20,16 @@ class ImageInserterSkill(BaseSkill):
 
         for key in required_keys:
             if key not in state:
-                self.logger.error(f"{key} not found in state")
+                self.logger.error(f"状态中未找到 {key}")
                 return False
 
         if not state.get("insertion_plan"):
-            self.logger.error("Insertion plan is empty")
+            self.logger.error("插入计划为空")
             return False
 
         target_path = Path(state["target_path"])
         if not target_path.exists():
-            self.logger.error(f"Target document does not exist: {target_path}")
+            self.logger.error(f"目标文档不存在: {target_path}")
             return False
 
         return True
@@ -47,7 +47,7 @@ class ImageInserterSkill(BaseSkill):
         insertion_plan = state["insertion_plan"]
         extracted_images = state["extracted_images"]
 
-        self.logger.info(f"Inserting {len(insertion_plan)} images into {target_path}")
+        self.logger.info(f"向 {target_path} 插入 {len(insertion_plan)} 张图片")
 
         # Build the insertion plan for insert_images_batch
         batch_plan = []
@@ -57,7 +57,7 @@ class ImageInserterSkill(BaseSkill):
             # Get the image path
             if image_index >= len(extracted_images):
                 self.logger.warning(
-                    f"Image index {image_index} out of range, skipping"
+                    f"图片索引 {image_index} 超出范围，跳过"
                 )
                 continue
 
@@ -66,7 +66,7 @@ class ImageInserterSkill(BaseSkill):
 
             if not image_path.exists():
                 self.logger.warning(
-                    f"Image file not found: {image_path}, skipping"
+                    f"图片文件未找到: {image_path}，跳过"
                 )
                 continue
 
@@ -82,7 +82,7 @@ class ImageInserterSkill(BaseSkill):
         # Generate output filename (e.g., original_name_result.docx)
         output_path = output_dir / f"{target_path.stem}_result{target_path.suffix}"
 
-        self.logger.info(f"Saving final result to: {output_path}")
+        self.logger.info(f"保存最终结果到: {output_path}")
 
         # Insert images (using target_path as source, saving to output_path)
         insert_images_batch(
@@ -99,8 +99,8 @@ class ImageInserterSkill(BaseSkill):
         state["output_path"] = str(output_path)
         state["backup_path"] = None  # No backup needed as we don't modify original
 
-        self.logger.info(f"Successfully inserted {len(batch_plan)} images")
-        self.logger.info(f"Output saved to: {output_path}")
+        self.logger.info(f"成功插入 {len(batch_plan)} 张图片")
+        self.logger.info(f"输出已保存到: {output_path}")
 
         return state
 

@@ -33,8 +33,8 @@ class LLMAdvisorSkill(BaseSkill):
         self.llm = provider or create_llm_provider()
 
         self.logger.info(
-            f"Initialized with {self.llm.provider_name} provider "
-            f"(model: {self.llm.model}, multimodal: {self.llm.supports_multimodal})"
+            f"已初始化 {self.llm.provider_name} 提供商 "
+            f"(模型: {self.llm.model}, 多模态: {self.llm.supports_multimodal})"
         )
 
     def validate_input(self, state: Dict[str, Any]) -> bool:
@@ -43,11 +43,11 @@ class LLMAdvisorSkill(BaseSkill):
 
         for key in required_keys:
             if key not in state:
-                self.logger.error(f"{key} not found in state")
+                self.logger.error(f"状态中未找到 {key}")
                 return False
 
         if not state.get("extracted_images"):
-            self.logger.error("No images to insert")
+            self.logger.error("没有需要插入的图片")
             return False
 
         return True
@@ -212,7 +212,7 @@ Analyze the images below and provide your insertion plan:"""
             return insertion_plan
 
         except json.JSONDecodeError as e:
-            self.logger.error(f"Failed to parse JSON: {e}")
+            self.logger.error(f"JSON 解析失败: {e}")
             # Fallback: try to extract JSON from markdown code block
             if "```json" in response:
                 json_start = response.find("```json") + 7
@@ -230,7 +230,7 @@ Analyze the images below and provide your insertion plan:"""
         Returns:
             State updated with 'insertion_plan' list
         """
-        self.logger.info("Querying LLM for insertion advice")
+        self.logger.info("查询 LLM 获取插入建议")
 
         # Check if we should use multimodal features
         use_multimodal = (
@@ -239,7 +239,7 @@ Analyze the images below and provide your insertion plan:"""
         )
 
         if use_multimodal:
-            self.logger.info("Using multimodal analysis with image understanding")
+            self.logger.info("使用多模态分析，包含图片理解")
             prompt = self.build_multimodal_prompt(state)
 
             # Get image paths
@@ -249,19 +249,19 @@ Analyze the images below and provide your insertion plan:"""
                 if Path(img["temp_path"]).exists()
             ]
 
-            self.logger.info(f"Sending {len(image_paths)} images to LLM")
+            self.logger.info(f"向 LLM 发送 {len(image_paths)} 张图片")
 
             try:
                 response = self.llm.invoke_with_images(prompt, image_paths)
                 response_text = response.content
             except Exception as e:
                 self.logger.warning(
-                    f"Multimodal invocation failed: {e}. Falling back to text-only."
+                    f"多模态调用失败: {e}。回退到纯文本模式。"
                 )
                 use_multimodal = False
 
         if not use_multimodal:
-            self.logger.info("Using text-only analysis")
+            self.logger.info("使用纯文本分析")
             prompt = self.build_prompt(state)
             response = self.llm.invoke(prompt)
             response_text = response.content
@@ -277,8 +277,8 @@ Analyze the images below and provide your insertion plan:"""
             num_images = len(state["extracted_images"])
             if len(insertion_plan) != num_images:
                 self.logger.warning(
-                    f"LLM suggested {len(insertion_plan)} positions "
-                    f"but we have {num_images} images"
+                    f"LLM 建议 {len(insertion_plan)} 个位置，"
+                    f"但我们有 {num_images} 张图片"
                 )
 
             # Update state
@@ -287,22 +287,22 @@ Analyze the images below and provide your insertion plan:"""
             state["used_multimodal"] = use_multimodal
 
             self.logger.info(
-                f"Generated insertion plan for {len(insertion_plan)} images "
-                f"(multimodal: {use_multimodal})"
+                f"为 {len(insertion_plan)} 张图片生成插入计划 "
+                f"(多模态: {use_multimodal})"
             )
 
             # Log the plan
             for decision in insertion_plan:
                 self.logger.info(
-                    f"  Image {decision['image_index']} -> "
-                    f"after Para {decision['insert_after_para']}: "
-                    f"{decision.get('reason', 'No reason provided')}"
+                    f"  图片 {decision['image_index']} -> "
+                    f"插入到段落 {decision['insert_after_para']} 之后: "
+                    f"{decision.get('reason', '未提供原因')}"
                 )
 
             return state
 
         except Exception as e:
-            self.logger.error(f"LLM query failed: {e}")
+            self.logger.error(f"LLM 查询失败: {e}")
             raise
 
 

@@ -17,12 +17,12 @@ class DocxExtractorSkill(BaseSkill):
     def validate_input(self, state: Dict[str, Any]) -> bool:
         """Validate that source_path is provided."""
         if "source_path" not in state:
-            self.logger.error("source_path not found in state")
+            self.logger.error("状态中未找到 source_path")
             return False
 
         source_path = Path(state["source_path"])
         if not source_path.exists():
-            self.logger.error(f"Source document does not exist: {source_path}")
+            self.logger.error(f"源文档不存在: {source_path}")
             return False
 
         return True
@@ -39,7 +39,7 @@ class DocxExtractorSkill(BaseSkill):
         source_path = Path(state["source_path"])
         output_dir = config.TEMP_DIR
 
-        self.logger.info(f"Extracting images from {source_path}")
+        self.logger.info(f"从 {source_path} 提取图片")
 
         # Extract images
         images = extract_images_from_docx(source_path, output_dir)
@@ -62,7 +62,7 @@ class DocxExtractorSkill(BaseSkill):
         state["extracted_images"] = images_dict
         state["current_step"] = "images_extracted"
 
-        self.logger.info(f"Successfully extracted {len(images)} images")
+        self.logger.info(f"成功提取 {len(images)} 张图片")
 
         return state
 

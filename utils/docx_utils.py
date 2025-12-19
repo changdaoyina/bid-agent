@@ -57,7 +57,7 @@ def extract_images_from_docx(doc_path: Path, output_dir: Path) -> List[ImageInfo
     Returns:
         List of ImageInfo objects containing image metadata
     """
-    logger.info(f"Extracting images from {doc_path}")
+    logger.info(f"从 {doc_path} 提取图片")
     doc = Document(doc_path)
     images = []
     image_index = 0
@@ -89,7 +89,7 @@ def extract_images_from_docx(doc_path: Path, output_dir: Path) -> List[ImageInfo
                 with Image.open(BytesIO(image_data)) as img:
                     width, height = img.size
             except Exception as e:
-                logger.warning(f"Could not get dimensions for {filename}: {e}")
+                logger.warning(f"无法获取 {filename} 的尺寸: {e}")
                 width, height = None, None
 
             # Create ImageInfo object
@@ -108,7 +108,7 @@ def extract_images_from_docx(doc_path: Path, output_dir: Path) -> List[ImageInfo
 
             logger.debug(f"Extracted {filename} ({len(image_data)} bytes)")
 
-    logger.info(f"Extracted {len(images)} images to {output_dir}")
+    logger.info(f"提取 {len(images)} 张图片到 {output_dir}")
     return images
 
 
@@ -121,7 +121,7 @@ def analyze_document_structure(doc_path: Path) -> DocumentStructure:
     Returns:
         DocumentStructure object containing document analysis
     """
-    logger.info(f"Analyzing document structure: {doc_path}")
+    logger.info(f"分析文档结构: {doc_path}")
     doc = Document(doc_path)
     paragraphs_info = []
     headings = []
@@ -164,8 +164,8 @@ def analyze_document_structure(doc_path: Path) -> DocumentStructure:
         empty_paragraphs=empty_paragraphs
     )
 
-    logger.info(f"Document has {structure.total_paragraphs} paragraphs, "
-                f"{len(headings)} headings, {len(empty_paragraphs)} empty paragraphs")
+    logger.info(f"文档包含 {structure.total_paragraphs} 个段落, "
+                f"{len(headings)} 个标题, {len(empty_paragraphs)} 个空段落")
 
     return structure
 
@@ -238,7 +238,7 @@ def insert_images_batch(
         width_inches: Width of images in inches
         alignment: Alignment of images
     """
-    logger.info(f"Inserting {len(insertion_plan)} images into {doc_path}")
+    logger.info(f"向 {doc_path} 插入 {len(insertion_plan)} 张图片")
     doc = Document(doc_path)
 
     # Sort insertion plan by paragraph index in reverse order
@@ -259,7 +259,7 @@ def insert_images_batch(
 
     # Save the modified document
     doc.save(str(output_path))
-    logger.info(f"Saved modified document to {output_path}")
+    logger.info(f"已保存修改后的文档到 {output_path}")
 
 
 def get_document_summary(structure: DocumentStructure) -> str:

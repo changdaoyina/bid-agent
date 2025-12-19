@@ -32,7 +32,7 @@ class GeminiProvider(BaseLLMProvider):
         # Initialize Gemini client
         self.client = genai.Client(api_key=api_key)
 
-        logger.info(f"Initialized Gemini provider with model {model}")
+        logger.info(f"已初始化 Gemini 提供商，使用模型 {model}")
 
     def invoke(self, prompt: str) -> LLMResponse:
         """Send a text prompt to Gemini.
@@ -75,7 +75,7 @@ class GeminiProvider(BaseLLMProvider):
             LLMResponse object
         """
         logger.info(
-            f"Invoking Gemini multimodal with {len(image_paths)} images"
+            f"调用 Gemini 多模态，包含 {len(image_paths)} 张图片"
         )
 
         # Build multimodal content
@@ -88,7 +88,7 @@ class GeminiProvider(BaseLLMProvider):
         for img_path in image_paths:
             img_path_obj = Path(img_path)
             if not img_path_obj.exists():
-                logger.warning(f"Image not found: {img_path}, skipping")
+                logger.warning(f"图片未找到: {img_path}，跳过")
                 continue
 
             # Read image data

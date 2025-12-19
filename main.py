@@ -34,12 +34,12 @@ def validate_environment() -> bool:
     is_valid, errors = config.validate_config()
 
     if not is_valid:
-        logger.error("Configuration validation failed:")
+        logger.error("配置验证失败:")
         for error in errors:
             logger.error(f"  - {error}")
         return False
 
-    logger.info("✓ Configuration validated successfully")
+    logger.info("✓ 配置验证成功")
     return True
 
 
@@ -52,17 +52,17 @@ def main() -> None:
 
     # Validate environment
     if not validate_environment():
-        logger.error("\nPlease fix the configuration errors and try again.")
-        logger.info("\nHint: Make sure you have:")
-        logger.info("  1. Created a .env file with your API key (GLM_API_KEY or GEMINI_API_KEY)")
-        logger.info("  2. Set LLM_PROVIDER to 'glm' or 'gemini' in .env")
-        logger.info("  3. Placed source document in 'from/' directory")
-        logger.info("  4. Placed target document in 'to/' directory")
+        logger.error("\n请修复配置错误后重试。")
+        logger.info("\n提示: 请确保:")
+        logger.info("  1. 已创建 .env 文件并设置 API 密钥 (GLM_API_KEY 或 GEMINI_API_KEY)")
+        logger.info("  2. 在 .env 中设置 LLM_PROVIDER 为 'glm' 或 'gemini'")
+        logger.info("  3. 将源文档放在 'from/' 目录")
+        logger.info("  4. 将目标文档放在 'to/' 目录")
         sys.exit(1)
 
     # Run the agent
     try:
-        logger.info("Starting bid agent workflow...\n")
+        logger.info("启动招投标代理工作流...\n")
 
         result = run_bid_agent(
             source_path=str(config.SOURCE_DOC_PATH),
@@ -75,31 +75,31 @@ def main() -> None:
         print("=" * 70)
 
         if result.get("error"):
-            print(f"\n✗ Status: FAILED")
-            print(f"  Error: {result['error']}")
+            print(f"\n✗ 状态: 失败")
+            print(f"  错误: {result['error']}")
             sys.exit(1)
         elif result.get("completed"):
-            print(f"\n✓ Status: SUCCESS")
-            print(f"  LLM Provider: {result.get('llm_provider', 'unknown').upper()}")
+            print(f"\n✓ 状态: 成功")
+            print(f"  LLM 提供商: {result.get('llm_provider', 'unknown').upper()}")
             if result.get('used_multimodal'):
-                print(f"  Multimodal: Yes (analyzed images with AI vision)")
-            print(f"  Images extracted: {len(result.get('extracted_images', []))}")
-            print(f"  Images inserted: {len(result.get('insertion_plan', []))}")
-            print(f"  Output document: {result.get('output_path')}")
+                print(f"  多模态: 是 (使用 AI 视觉分析图片)")
+            print(f"  已提取图片: {len(result.get('extracted_images', []))} 张")
+            print(f"  已插入图片: {len(result.get('insertion_plan', []))} 张")
+            print(f"  输出文档: {result.get('output_path')}")
             if result.get('backup_path'):
-                print(f"  Backup created: {result.get('backup_path')}")
-            print("\nYou can now open the output document to see the results!")
+                print(f"  已创建备份: {result.get('backup_path')}")
+            print("\n现在可以打开输出文档查看结果！")
         else:
-            print(f"\n⚠ Status: INCOMPLETE")
-            print(f"  Current step: {result.get('current_step')}")
+            print(f"\n⚠ 状态: 未完成")
+            print(f"  当前步骤: {result.get('current_step')}")
 
         print("\n" + "=" * 70 + "\n")
 
     except KeyboardInterrupt:
-        logger.info("\n\nWorkflow interrupted by user")
+        logger.info("\n\n用户中断工作流")
         sys.exit(130)
     except Exception as e:
-        logger.error(f"\n\nUnexpected error: {e}", exc_info=True)
+        logger.error(f"\n\n意外错误: {e}", exc_info=True)
         sys.exit(1)
 
 
